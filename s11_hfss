@@ -1,0 +1,75 @@
+#!pip install pandas matplotlib
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Carregar o arquivo CSV para um DataFrame do pandas
+data = pd.read_csv('s11_001_aju.csv', sep=',', skiprows=1)  # Pular a primeira linha com os nomes das colunas
+
+# Renomear as colunas para facilitar o acesso
+data.columns = ['Freq', 'dB']
+
+# Converter as colunas 'Freq' e 'dB' para tipo numérico
+data['Freq'] = pd.to_numeric(data['Freq'], errors='coerce')
+data['dB'] = pd.to_numeric(data['dB'], errors='coerce')
+
+# Encontrar o menor valor de perda de retorno e sua frequência correspondente
+min_dB = data['dB'].min()
+freq_central = data.loc[data['dB'] == min_dB, 'Freq'].values[0]
+
+# Imprimir o menor valor de perda de retorno e a frequência central de operação
+print(f"Menor valor de perda de retorno: {min_dB:.3f} dB")
+print(f"Frequência Central de Operação: {freq_central:.3f} GHz")
+
+# Encontrar os valores de frequência para aproximadamente -10 dB
+perda_proxima = -10  # Valor de perda de retorno para o qual procuramos valores de frequência próximos
+perda_retorno = data['dB'].values  # Array de perda de retorno
+frequencia = data['Freq'].values  # Array de frequência
+
+perda_diff = np.abs(perda_retorno - perda_proxima)
+indices_proximos = perda_diff.argsort()[:2]  # Índices dos dois valores mais próximos
+
+# Encontrar os valores de frequência correspondentes aos valores de perda de retorno mais próximos
+valores_proximos = frequencia[indices_proximos]
+
+# Determinar fsup e finf
+fsup = max(valores_proximos)
+finf = min(valores_proximos)
+
+# Imprimir os valores de fsup e finf
+print(f"fsup: {fsup} GHz")
+print(f"finf: {finf} GHz")
+
+# Calcular a largura de banda em MHz
+largura_banda = (fsup - finf) * 1000
+
+# Imprimir a largura de banda
+print(f"Largura de Banda: {largura_banda:.2f} MHz")
+
+# Calcular a largura de banda na forma percentual
+largura_banda_percentual = ((fsup - finf) / freq_central) * 100
+
+# Imprimir a largura de banda na forma percentual
+print(f"Largura de Banda na forma percentual: {largura_banda_percentual:.2f}%")
+
+# Criar o gráfico de Frequência versus Perda de Retorno
+plt.figure(figsize=(8, 6))
+plt.plot(data['Freq'], data['dB'])
+
+# Plotar linha tracejada para fsup e finf
+plt.axvline(x=fsup, color='orange', linestyle='--', label=f'fsup: {fsup:.3f} GHz')
+plt.axvline(x=finf, color='green', linestyle='--', label=f'finf: {finf:.3f} GHz')
+
+# Plotar linha tracejada para -10 dB
+plt.axhline(y=perda_proxima, color='red', linestyle='--')
+
+# Adicionar legendas e títulos
+plt.title('Gráfico de Frequência vs Perda de Retorno')
+plt.xlabel('Frequência [GHz]')
+plt.ylabel('Perda de Retorno [dB]')
+plt.grid(True)
+plt.legend()
+
+# Mostrar o gráfico
+plt.show()
